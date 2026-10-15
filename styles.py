@@ -26,6 +26,12 @@ h1, h2, h3 { color: #111827; }
 .badge-medium { background: #FEF9C3; color: #854D0E; }
 .badge-high { background: #FEE2E2; color: #991B1B; }
 .badge-type { background: #DBEAFE; color: #1E40AF; }
+.hero { text-align: center; padding: 2.5rem 1rem 1.5rem; }
+.hero h1 { font-size: 2.6rem; font-weight: 800; margin: 0 0 .5rem; }
+.hero h1 span { background: linear-gradient(90deg, #8B5CF6, #DB2777); -webkit-background-clip: text;
+  background-clip: text; color: transparent; }
+.hero p { color: #6B7280; max-width: 40rem; margin: 0 auto; font-size: 1.1rem; }
+[data-testid="stPageLink"] a { color: #7C3AED; font-weight: 600; }
 </style>
 """
 

@@ -62,6 +62,8 @@ with right, st.container(border=True):
             st.toast("Requirement saved")
         if b2.button("➡️ Send to Generator", use_container_width=True):
             edge = "\n".join(f"- {x}" for x in data["missing_edge_cases"])
-            ss["analyzer_handoff"] = res["text"] + (f"\n\nEdge cases to cover:\n{edge}" if edge else "")
+            tail = f"\n\nEdge cases to cover:\n{edge}" if edge else ""
+            # generator caps at 2000 chars: trim the requirement, never the edge cases
+            ss["analyzer_handoff"] = res["text"][:max(0, 2000 - len(tail))] + tail
             ss.pop("gen_text", None)  # let the generator prefill from the handoff
             st.switch_page("pages/generator.py")

@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import streamlit as st
 
-from db import get_conn
+from db import get_conn, guarded
 from export import bugs_to_docx
 from prompts import SEVERITIES
 from styles import badge, inject_css
@@ -16,7 +16,7 @@ st.title("Bug Tracker")
 c1, c2, c3 = st.columns([1, 1, 2])
 sev = c1.selectbox("Severity", ["All", *SEVERITIES])
 stat = c2.selectbox("Status", ["All", *STATUSES])
-q = c3.text_input("Search")
+q = c3.text_input("Search", max_chars=100)
 
 sql, args = "SELECT * FROM bugs WHERE 1=1", []
 if sev != "All":
@@ -57,11 +57,11 @@ for b in bugs:
         s1, s2 = st.columns([2, 1])
         new = s1.selectbox("Status", STATUSES, index=STATUSES.index(b["status"]), key=f"st_{b['id']}")
         if new != b["status"]:
-            with get_conn() as c:
+            with guarded(), get_conn() as c:
                 c.execute("UPDATE bugs SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?", (new, b["id"]))
             st.rerun()
         if s2.checkbox("Confirm delete", key=f"cf_{b['id']}") and s2.button("Delete", key=f"del_{b['id']}"):
-            with get_conn() as c:
+            with guarded(), get_conn() as c:
                 c.execute("DELETE FROM bugs WHERE id=?", (b["id"],))
             for im in imgs:
                 if os.path.isfile(im["path"] or ""):

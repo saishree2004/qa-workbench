@@ -1,9 +1,9 @@
-import html
+from html import escape
 
 import streamlit as st
 
 from ai_client import call_json
-from db import get_conn
+from db import LIMIT, get_conn, guarded, upload_error
 from prompts import PRIORITIES, TEST_TYPES, generate_cases
 from styles import badge, inject_css
 
@@ -29,12 +29,12 @@ def save(status):
     """Insert selected cases with `status` plus all rejected cases, then drop them from the review list."""
     picked = [c for c in ss.gen_cases if ss.get(f"sel_{c['uid']}")]
     rows = [(c, status) for c in picked] + [(c, "rejected") for c in ss.gen_rejected]
-    with get_conn() as conn:
+    with guarded(), get_conn() as conn:
         conn.executemany(
             "INSERT INTO test_cases(suite,title,type,priority,preconditions,steps,expected,tags,status,edited)"
             " VALUES (?,?,?,?,?,?,?,?,?,?)",
-            [(suite.strip(), c["title"], c["type"], c["priority"], c["preconditions"], c["steps"],
-              c["expected"], c["tags"], s, c["edited"]) for c, s in rows])
+            [(suite.strip()[:100], *(str(c[k])[:LIMIT] for k in ("title", "type", "priority", "preconditions", "steps", "expected", "tags")),
+              s, c["edited"]) for c, s in rows])
     ss.gen_cases = [c for c in ss.gen_cases if c not in picked]
     ss.gen_rejected = []
     ss.gen_msg = (f"Saved {len(picked)} as {status}" + (f", {len(rows) - len(picked)} rejected" if len(rows) > len(picked) else ""))
@@ -49,17 +49,23 @@ with left, st.container(border=True):
     with t_manual:
         manual = st.text_area("Describe the feature", key="gen_text", max_chars=2000, height=220)
     with t_file:
-        up = st.file_uploader("Upload .txt or .md", type=["txt", "md"])
-        # shortcut: truncates large files to 20k chars, chunk if real specs exceed it
-        file_text = up.getvalue().decode("utf-8", errors="replace")[:20000] if up else ""
+        up = st.file_uploader("Upload .txt or .md (max 5 MB)", type=["txt", "md"])
+        bad = upload_error(up, (".txt", ".md")) if up else None
+        if bad:
+            st.error(bad)
+        file_text = up.getvalue().decode("utf-8", errors="replace") if up and not bad else ""
         if file_text:
             st.caption(f"{len(file_text)} chars loaded from {up.name}")
     c1, c2, c3 = st.columns(3)
     test_type = c1.selectbox("Test type", TEST_TYPES)
     priority = c2.selectbox("Priority", PRIORITIES, index=1)
     count = c3.number_input("Count", 1, 10, 5)
+    count = max(1, min(10, int(count)))
     requirement = (file_text or manual).strip()
-    if st.button("✨ Generate", use_container_width=True, disabled=not requirement):
+    too_long = len(requirement) > LIMIT
+    if too_long:
+        st.error(f"Requirement is {len(requirement)} characters; the limit is {LIMIT}.")
+    if st.button("✨ Generate", use_container_width=True, disabled=not requirement or too_long):
         with st.spinner("Generating test cases..."):
             data = call_json("generator", generate_cases(requirement, test_type, priority, count))
         cases = data.get("cases") if isinstance(data, dict) else None
@@ -90,14 +96,14 @@ with right, st.container(border=True):
             cb.checkbox("Select", key=f"sel_{u}", label_visibility="collapsed")
             kind = c["priority"].lower() if c["priority"].lower() in ("low", "medium", "high") else "medium"
             body.markdown(
-                f"<u><b>{html.escape(c['title'])}</b></u><br>{badge(html.escape(c['priority']), kind)}"
-                f"{badge(html.escape(c['type']), 'type')}" + (" ✏️" if c["edited"] else ""),
+                f"<u><b>{escape(c['title'])}</b></u><br>{badge(c['priority'], kind)}"
+                f"{badge(c['type'], 'type')}" + (" ✏️" if c["edited"] else ""),
                 unsafe_allow_html=True)
             if c["tags"]:
                 body.caption("🏷️ " + c["tags"])
             with body.expander("Edit"):
                 for f in ("title", "preconditions", "steps", "expected", "tags"):
-                    new = (st.text_input if f in ("title", "tags") else st.text_area)(f.capitalize(), c[f], key=f"{f}_{u}")
+                    new = (st.text_input if f in ("title", "tags") else st.text_area)(f.capitalize(), c[f], key=f"{f}_{u}", max_chars=LIMIT if f != "title" else 200)
                     if new != c[f]:
                         c[f], c["edited"] = new, 1
             if body.button("Reject", key=f"rej_{u}"):
@@ -109,7 +115,7 @@ with right, st.container(border=True):
         st.markdown(badge(f"{n_sel} of {len(ss.gen_cases)} selected", "type")
                     + (f" {badge(f'{len(ss.gen_rejected)} rejected', 'high')}" if ss.gen_rejected else ""),
                     unsafe_allow_html=True)
-        suite = st.text_input("Suite name", key="gen_suite")
+        suite = st.text_input("Suite name", key="gen_suite", max_chars=100)
         s1, s2 = st.columns(2)
         if s1.button("Save to Suite", use_container_width=True, disabled=not suite.strip()):
             save("draft")

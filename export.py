@@ -35,8 +35,11 @@ def bugs_to_docx(bug_ids) -> bytes:
             for img in c.execute("SELECT * FROM bug_images WHERE bug_id=? ORDER BY fig_no, id", (bid,)):
                 if not os.path.isfile(img["path"] or ""):
                     continue
+                try:
+                    doc.add_picture(img["path"], width=Inches(6))
+                except Exception:  # corrupt or unsupported image: skip it, keep the report
+                    continue
                 fig += 1
-                doc.add_picture(img["path"], width=Inches(6))
                 doc.add_paragraph(f"Fig. {fig}: {img['caption'] or ''}")
     buf = io.BytesIO()
     doc.save(buf)

@@ -3,7 +3,7 @@ import json
 import streamlit as st
 
 from ai_client import call_json
-from db import get_conn
+from db import LIMIT, get_conn, guarded, upload_error
 from prompts import ANALYZE_KEYS, analyze_requirement
 from styles import badge, inject_css
 
@@ -25,15 +25,20 @@ with left, st.container(border=True):
     st.subheader("Requirement")
     t_manual, t_file = st.tabs(["Manual Description", "Requirements File"])
     with t_manual:
-        manual = st.text_area("Paste the requirement", key="an_text", height=260)
+        manual = st.text_area("Paste the requirement", key="an_text", height=260, max_chars=LIMIT)
     with t_file:
-        up = st.file_uploader("Upload .txt or .md", type=["txt", "md"], key="an_file")
-        # shortcut: truncates large files to 20k chars, chunk if real specs exceed it
-        file_text = up.getvalue().decode("utf-8", errors="replace")[:20000] if up else ""
+        up = st.file_uploader("Upload .txt or .md (max 5 MB)", type=["txt", "md"], key="an_file")
+        bad = upload_error(up, (".txt", ".md")) if up else None
+        if bad:
+            st.error(bad)
+        file_text = up.getvalue().decode("utf-8", errors="replace") if up and not bad else ""
         if file_text:
             st.caption(f"{len(file_text)} chars loaded from {up.name}")
     requirement = (file_text or manual).strip()
-    if st.button("🔍 Analyze", use_container_width=True, disabled=not requirement):
+    too_long = len(requirement) > LIMIT
+    if too_long:
+        st.error(f"Requirement is {len(requirement)} characters; the limit is {LIMIT}.")
+    if st.button("🔍 Analyze", use_container_width=True, disabled=not requirement or too_long):
         with st.spinner("Analyzing..."):
             data = call_json("analyzer", analyze_requirement(requirement))
         if isinstance(data, dict):
@@ -56,7 +61,7 @@ with right, st.container(border=True):
         st.code("\n".join(f"{i}. {q}" for i, q in enumerate(data["po_questions"], 1)), language=None)
         b1, b2 = st.columns(2)
         if b1.button("💾 Save", use_container_width=True):
-            with get_conn() as conn:
+            with guarded(), get_conn() as conn:
                 conn.execute("INSERT INTO requirements(title,text,analysis_json) VALUES (?,?,?)",
                              (res["text"].splitlines()[0][:80], res["text"], json.dumps(data)))
             st.toast("Requirement saved")

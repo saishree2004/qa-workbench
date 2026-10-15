@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import streamlit as st
 
@@ -69,13 +70,28 @@ def _groq(prompt, images):
 
 
 def _log(feature, ok):
-    with get_conn() as conn:
-        conn.execute("INSERT INTO ai_log(feature, ok) VALUES (?, ?)", (feature, int(ok)))
+    try:  # logging must never break the feature; only feature + outcome are stored
+        with get_conn() as conn:
+            conn.execute("INSERT INTO ai_log(feature, ok) VALUES (?, ?)", (feature, int(ok)))
+    except Exception:
+        pass
 
 
 def call_json(feature, prompt, images=None):
     """Call the AI and return parsed JSON, or None after showing a friendly error.
     images: list of (bytes, mime_type); dropped if the provider has no vision."""
+    ss = st.session_state
+    if time.time() - ss.get("ai_busy_at", 0) < TIMEOUT * 3:  # a call is still running (stale flag expires)
+        st.warning("An AI request is already running. Please wait.")
+        return None
+    ss["ai_busy_at"] = time.time()
+    try:
+        return _call_json(feature, prompt, images)
+    finally:
+        ss["ai_busy_at"] = 0
+
+
+def _call_json(feature, prompt, images):
     images = images if images and supports_vision() else []
     call = _gemini if PROVIDER == "gemini" else _groq
     data = None
@@ -91,9 +107,9 @@ def call_json(feature, prompt, images=None):
         data = parse_json(raw)
         if data is None:
             data = parse_json(call(f"{prompt}\n\n{RETRY}", images))
-    except Exception as e:
+    except Exception:  # message deliberately omits the exception: it can echo request details
         _log(feature, False)
-        st.error(f"AI request failed: {e}")
+        st.error("The AI request failed. Check your API key and connection, then try again.")
         return None
     _log(feature, data is not None)
     if data is None:

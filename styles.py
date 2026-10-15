@@ -1,3 +1,5 @@
+import html
+
 import streamlit as st
 
 CSS = """
@@ -33,5 +35,6 @@ def inject_css():
 
 
 def badge(text, kind):
-    """kind: low|medium|high|type"""
-    return f'<span class="badge badge-{kind}">{text}</span>'
+    """kind: low|medium|high|type. text is escaped here."""
+    kind = kind if kind in ("low", "medium", "high", "type") else "type"
+    return f'<span class="badge badge-{kind}">{html.escape(str(text))}</span>'

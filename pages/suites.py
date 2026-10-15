@@ -3,7 +3,7 @@ import html
 import pandas as pd
 import streamlit as st
 
-from db import get_conn
+from db import LIMIT, get_conn, guarded
 from prompts import PRIORITIES, TEST_TYPES
 from styles import badge, inject_css
 
@@ -49,7 +49,7 @@ with tab_browse:
                 st.warning(f"Permanently delete {len(ids)} case(s), their run results and bug links?")
                 if st.button("Confirm delete", type="primary", key="br_del"):
                     marks = ",".join("?" * len(ids))
-                    with get_conn() as c:
+                    with guarded(), get_conn() as c:
                         c.execute(f"DELETE FROM run_results WHERE case_id IN ({marks})", ids)
                         c.execute(f"UPDATE bugs SET case_id=NULL WHERE case_id IN ({marks})", ids)
                         c.execute(f"DELETE FROM test_cases WHERE id IN ({marks})", ids)
@@ -66,7 +66,7 @@ with tab_run:
             n = c.execute("SELECT COUNT(*) FROM test_cases WHERE suite=? AND status='published'", (suite,)).fetchone()[0]
         st.caption(f"{n} published case(s)")
         if st.button("Start run", type="primary", disabled=n == 0):
-            with get_conn() as c:
+            with guarded(), get_conn() as c:
                 rid = c.execute("INSERT INTO runs(suite) VALUES(?)", (suite,)).lastrowid
             ss.run = {"id": rid, "suite": suite, "done": False}
             st.rerun()
@@ -77,12 +77,12 @@ with tab_run:
         if not run["done"]:
             for cs in cases:
                 with st.container(border=True):
-                    st.markdown(f"**{html.escape(cs['title'] or '')}** " + badge(html.escape(cs["type"] or ""), "type") +
+                    st.markdown(f"**{html.escape(cs['title'] or '')}** " + badge(cs["type"] or "", "type") +
                                 " " + badge(cs["priority"] or "", (cs["priority"] or "low").lower()), unsafe_allow_html=True)
                     st.markdown("**Steps**\n\n" + (cs["steps"] or "-"))
                     st.markdown("**Expected**\n\n" + (cs["expected"] or "-"))
                     res = st.radio("Result", ["Pass", "Fail", "Blocked"], index=None, horizontal=True, key=f"res_{cs['id']}")
-                    note = st.text_input("Note", key=f"note_{cs['id']}")
+                    note = st.text_input("Note", key=f"note_{cs['id']}", max_chars=LIMIT)
                     if res == "Fail" and st.button("Report bug", key=f"bug_{cs['id']}"):
                         ss["bug_prefill"] = {"case_id": cs["id"], "title": cs["title"], "steps": cs["steps"],
                                              "expected": cs["expected"], "note": note}
@@ -92,14 +92,14 @@ with tab_run:
                 st.caption(f"{len(unset)} case(s) without a result will be skipped.")
             b1, b2 = st.columns([1, 5])
             if b1.button("Finish run", type="primary"):
-                with get_conn() as c:
+                with guarded(), get_conn() as c:
                     c.executemany("INSERT INTO run_results(run_id,case_id,result,note) VALUES(?,?,?,?)",
-                                  [(run["id"], x["id"], ss[f"res_{x['id']}"], ss.get(f"note_{x['id']}", "")) for x in cases if ss.get(f"res_{x['id']}")])
+                                  [(run["id"], x["id"], ss[f"res_{x['id']}"], str(ss.get(f"note_{x['id']}", ""))[:LIMIT]) for x in cases if ss.get(f"res_{x['id']}")])
                     c.execute("UPDATE runs SET finished_at=CURRENT_TIMESTAMP WHERE id=?", (run["id"],))
                 run["done"] = True
                 st.rerun()
             if b2.button("Cancel run"):
-                with get_conn() as c:
+                with guarded(), get_conn() as c:
                     c.execute("DELETE FROM runs WHERE id=?", (run["id"],))
                 ss.run = None
                 st.rerun()

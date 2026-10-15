@@ -16,3 +16,19 @@ Return JSON exactly in this shape:
 
 Requirement:
 \"\"\"{requirement}\"\"\""""
+
+
+ANALYZE_KEYS = ["ambiguities", "missing_edge_cases", "untestable_statements", "po_questions"]
+
+
+def analyze_requirement(requirement):
+    return f"""You are a senior QA engineer reviewing a requirement before testing starts.
+Be specific and quote the requirement where useful. Each list item is one short string.
+
+Return JSON exactly in this shape:
+{{"ambiguities": ["vague or conflicting wording"], "missing_edge_cases": ["scenario the requirement does not cover"],
+"untestable_statements": ["statement with no measurable pass/fail criteria"],
+"po_questions": ["question to ask the Product Owner"]}}
+
+Requirement:
+\"\"\"{requirement}\"\"\""""

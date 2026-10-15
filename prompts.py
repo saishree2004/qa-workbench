@@ -51,3 +51,17 @@ Return JSON exactly in this shape:
 
 Notes:
 \"\"\"{notes}\"\"\""""
+
+
+def daily_update(data, notes):
+    return f"""You are a QA engineer writing a concise end-of-day status update from the data below.
+Use only this data; do not invent facts. Each value is a short plain-text string (use newlines and "- " bullets for lists).
+
+Return JSON exactly in this shape:
+{{"sections_tested": "...", "results": "...", "bugs_raised": "...", "blockers": "...", "next_steps": "..."}}
+
+Data:
+{data}
+
+Extra blockers/notes from the tester:
+\"\"\"{notes or "none"}\"\"\""""

@@ -8,7 +8,7 @@ from prompts import JSON_RULE, RETRY
 
 PROVIDER = "gemini"  # "gemini" | "groq"
 MODEL = "gemini-3.5-flash"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 MAX_TOKENS = 8192
 TIMEOUT = 30  # seconds per AI request
 VISION = {"gemini": True, "groq": False}  # groq production models have no vision

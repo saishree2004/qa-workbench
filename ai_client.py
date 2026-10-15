@@ -41,7 +41,7 @@ def _gemini(prompt, images):
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=_key("GEMINI_API_KEY"), http_options=types.HttpOptions(timeout=TIMEOUT * 1000))
+    client = genai.Client(api_key=_key("GEMINI_API_KEY"), http_options=types.HttpOptions(timeout=TIMEOUT * 1000, retry_options=types.HttpRetryOptions(attempts=1)))
     parts = [prompt] + [types.Part.from_bytes(data=b, mime_type=m) for b, m in images]
     r = client.models.generate_content(
         model=MODEL,

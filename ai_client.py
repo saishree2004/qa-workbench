@@ -7,9 +7,10 @@ from db import get_conn
 from prompts import JSON_RULE, RETRY
 
 PROVIDER = "gemini"  # "gemini" | "groq"
-MODEL = "gemini-3.8-flash"
+MODEL = "gemini-3.5-flash"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 MAX_TOKENS = 8192
+TIMEOUT = 30  # seconds per AI request
 VISION = {"gemini": True, "groq": False}  # groq production models have no vision
 
 
@@ -40,7 +41,7 @@ def _gemini(prompt, images):
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=_key("GEMINI_API_KEY"))
+    client = genai.Client(api_key=_key("GEMINI_API_KEY"), http_options=types.HttpOptions(timeout=TIMEOUT * 1000))
     parts = [prompt] + [types.Part.from_bytes(data=b, mime_type=m) for b, m in images]
     r = client.models.generate_content(
         model=MODEL,
@@ -57,7 +58,7 @@ def _gemini(prompt, images):
 def _groq(prompt, images):
     from groq import Groq
 
-    client = Groq(api_key=_key("GROQ_API_KEY"))
+    client = Groq(api_key=_key("GROQ_API_KEY"), timeout=TIMEOUT, max_retries=0)
     r = client.chat.completions.create(
         model=GROQ_MODEL,
         messages=[{"role": "system", "content": JSON_RULE}, {"role": "user", "content": prompt}],

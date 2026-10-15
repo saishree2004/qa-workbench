@@ -32,3 +32,22 @@ Return JSON exactly in this shape:
 
 Requirement:
 \"\"\"{requirement}\"\"\""""
+
+
+BUG_KEYS = ["title", "severity", "description", "steps", "expected", "actual", "suggested_fix"]
+SEVERITIES = ["Low", "Medium", "High", "Critical"]
+
+
+def build_bug(notes, has_images):
+    shots = "Screenshots are attached; use what they show. " if has_images else ""
+    return f"""You are a senior QA engineer writing a clear bug report from rough notes. {shots}
+Do not invent facts that are not in the notes. Keep it concise.
+"severity" must be one of {SEVERITIES}. "steps" is a numbered list as one string with newlines.
+
+Return JSON exactly in this shape:
+{{"title": "short summary", "severity": "Medium", "description": "what is wrong",
+"steps": "1. ...\\n2. ...", "expected": "expected result", "actual": "actual result",
+"suggested_fix": "likely cause or fix"}}
+
+Notes:
+\"\"\"{notes}\"\"\""""

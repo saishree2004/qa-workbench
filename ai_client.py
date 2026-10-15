@@ -80,7 +80,15 @@ def call_json(feature, prompt, images=None):
     call = _gemini if PROVIDER == "gemini" else _groq
     data = None
     try:
-        data = parse_json(call(prompt, images))
+        try:
+            raw = call(prompt, images)
+        except Exception as e:
+            if PROVIDER != "gemini" or getattr(e, "code", None) not in (429, 503) or not _key("GROQ_API_KEY"):
+                raise
+            call, images = _groq, []  # overloaded or rate-limited: one text-only Groq attempt
+            raw = call(prompt, images)
+            st.caption("Used Groq fallback")
+        data = parse_json(raw)
         if data is None:
             data = parse_json(call(f"{prompt}\n\n{RETRY}", images))
     except Exception as e:

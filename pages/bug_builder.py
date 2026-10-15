@@ -6,9 +6,10 @@ import streamlit as st
 from ai_client import call_json, supports_vision
 from db import LIMIT, get_conn, guarded, image_ext, save_image, upload_error
 from prompts import BUG_KEYS, SEVERITIES, build_bug
-from styles import inject_css
+from styles import inject_css, require_login
 
 inject_css()
+require_login()
 ss = st.session_state
 LABELS = {"title": "Title", "severity": "Severity", "description": "Description", "steps": "Steps to Reproduce",
           "expected": "Expected Result", "actual": "Actual Result", "suggested_fix": "Suggested Fix"}

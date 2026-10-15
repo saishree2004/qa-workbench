@@ -5,9 +5,10 @@ import streamlit as st
 from ai_client import call_json
 from db import LIMIT, get_conn, guarded, upload_error
 from prompts import PRIORITIES, TEST_TYPES, generate_cases
-from styles import badge, inject_css
+from styles import badge, inject_css, require_login
 
 inject_css()
+require_login()
 ss = st.session_state
 ss.setdefault("gen_cases", [])
 ss.setdefault("gen_rejected", [])

@@ -1,11 +1,12 @@
 import streamlit as st
 
 from db import init_db
-from styles import inject_css
+from styles import inject_css, require_login
 
 st.set_page_config(page_title="QA Workbench", page_icon="assets/favicon.svg", layout="wide")
 st.logo("assets/logo.svg", icon_image="assets/favicon.svg")
 inject_css()
+require_login()
 init_db()
 
 

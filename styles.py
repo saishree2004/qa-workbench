@@ -1,4 +1,6 @@
+import hmac
 import html
+import os
 
 import streamlit as st
 
@@ -44,3 +46,26 @@ def badge(text, kind):
     """kind: low|medium|high|type. text is escaped here."""
     kind = kind if kind in ("low", "medium", "high", "type") else "type"
     return f'<span class="badge badge-{kind}">{html.escape(str(text))}</span>'
+
+
+def require_login():
+    """Password gate: st.stop() until APP_PASSWORD matches. Fails closed if unset."""
+    ss = st.session_state
+    if ss.get("auth"):
+        return
+    try:
+        secret = st.secrets["APP_PASSWORD"]
+    except Exception:
+        secret = os.environ.get("APP_PASSWORD")
+    if not secret:
+        st.error("APP_PASSWORD is not configured.")
+        st.stop()
+    st.title("Sign in")
+    with st.form("login"):
+        pw = st.text_input("Password", type="password")
+        if st.form_submit_button("Sign in") and hmac.compare_digest(pw.encode(), str(secret).encode()):
+            ss["auth"] = True
+            st.rerun()
+        elif pw:
+            st.error("Wrong password.")
+    st.stop()

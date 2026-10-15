@@ -6,9 +6,10 @@ import streamlit as st
 from ai_client import call_json
 from db import LIMIT, get_conn
 from prompts import daily_update
-from styles import inject_css
+from styles import inject_css, require_login
 
 inject_css()
+require_login()
 st.title("Daily Update")
 
 day = st.date_input("Date", date.today()).isoformat()

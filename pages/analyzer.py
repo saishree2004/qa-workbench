@@ -7,9 +7,10 @@ from db import get_conn, guarded, upload_error
 
 MAX_REQ = 10000  # analyzer only; generator keeps LIMIT (2000)
 from prompts import ANALYZE_KEYS, analyze_requirement
-from styles import badge, inject_css
+from styles import badge, inject_css, require_login
 
 inject_css()
+require_login()
 ss = st.session_state
 SECTIONS = {"ambiguities": "Ambiguities", "missing_edge_cases": "Missing edge cases",
             "untestable_statements": "Untestable statements", "po_questions": "Questions for PO"}

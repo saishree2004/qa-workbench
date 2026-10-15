@@ -1,4 +1,8 @@
+import io
 import os
+import shutil
+import tempfile
+import zipfile
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -97,3 +101,71 @@ def save_image(data):
     with open(path, "xb") as fh:
         fh.write(data)
     return path
+
+
+MAX_BACKUP = 200 * 1024 * 1024  # uncompressed cap, guards against zip bombs
+TABLES = {"requirements", "test_cases", "runs", "run_results", "bugs", "bug_images", "ai_log"}
+
+
+def make_backup():
+    """Zip of a consistent DB snapshot plus uploads/, as bytes."""
+    buf = io.BytesIO()
+    with tempfile.TemporaryDirectory() as tmp, zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        snap = os.path.join(tmp, DB_PATH)
+        src, dst = sqlite3.connect(DB_PATH), sqlite3.connect(snap)
+        try:
+            src.backup(dst)
+        finally:
+            src.close()
+            dst.close()
+        z.write(snap, DB_PATH)
+        for name in os.listdir(UPLOADS) if os.path.isdir(UPLOADS) else []:
+            z.write(os.path.join(UPLOADS, name), f"{UPLOADS}/{name}")
+    return buf.getvalue()
+
+
+def restore_backup(data):
+    """Validate a backup zip and replace the DB and uploads/. Raises ValueError if invalid."""
+    try:
+        z = zipfile.ZipFile(io.BytesIO(data))
+        infos = z.infolist()
+    except zipfile.BadZipFile:
+        raise ValueError("Not a valid zip file.")
+    names = {i.filename for i in infos}
+    if DB_PATH not in names or sum(i.file_size for i in infos) > MAX_BACKUP:
+        raise ValueError("Not a QA Workbench backup, or it is too large.")
+    for i in infos:
+        n = i.filename
+        if n != DB_PATH and not (n.startswith(UPLOADS + "/") and n.count("/") == 1 and n[len(UPLOADS) + 1:]
+                                 and n[len(UPLOADS) + 1] != "." and "\\" not in n):
+            raise ValueError(f"Unexpected file in backup: {n!r}")
+    with tempfile.TemporaryDirectory() as tmp:
+        for i in infos:
+            if i.filename == DB_PATH:
+                path = os.path.join(tmp, DB_PATH)
+            else:
+                os.makedirs(os.path.join(tmp, UPLOADS), exist_ok=True)
+                path = os.path.join(tmp, UPLOADS, os.path.basename(i.filename))
+            with z.open(i) as s, open(path, "wb") as o:
+                shutil.copyfileobj(s, o)
+        new_db = os.path.join(tmp, DB_PATH)
+        try:
+            c = sqlite3.connect(new_db)
+            try:
+                ok = c.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+                have = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            finally:
+                c.close()
+        except sqlite3.Error:
+            raise ValueError("Database in backup is corrupt.")
+        if not ok or not TABLES <= have:
+            raise ValueError("Database in backup is corrupt or has the wrong tables.")
+        src, dst = sqlite3.connect(new_db), sqlite3.connect(DB_PATH)
+        try:
+            src.backup(dst)  # in-place, keeps the live file and its connections valid
+        finally:
+            src.close()
+            dst.close()
+        shutil.rmtree(UPLOADS, ignore_errors=True)
+        if os.path.isdir(os.path.join(tmp, UPLOADS)):
+            shutil.copytree(os.path.join(tmp, UPLOADS), UPLOADS)

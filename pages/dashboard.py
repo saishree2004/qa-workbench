@@ -1,9 +1,9 @@
 import pandas as pd
 import streamlit as st
 
-from db import get_conn
+from db import get_conn, make_backup, restore_backup
 from prompts import SEVERITIES
-from styles import inject_css
+from styles import inject_css, require_login
 
 PURPLE = "#7C3AED"
 STATUSES = ["Open", "Fixed", "Retest", "Closed"]
@@ -28,6 +28,7 @@ def chart(data, empty_msg):
 
 
 inject_css()
+require_login()
 st.title("Dashboard")
 
 cases = one("SELECT COUNT(*) FROM test_cases")
@@ -96,3 +97,16 @@ with left, st.container(border=True):
 with right, st.container(border=True):
     st.subheader("Bugs by status")
     chart({s: int(sta.get(s, 0)) for s in STATUSES}, "No bugs logged yet. Nice and clean.")
+
+with st.container(border=True):
+    st.subheader("Backup")
+    st.download_button("Download backup", make_backup(), "qa-workbench-backup.zip", "application/zip")
+    up = st.file_uploader("Restore backup", type="zip")
+    if up and st.button("Restore (replaces all current data)"):
+        try:
+            restore_backup(up.getvalue())
+        except ValueError as e:
+            st.error(str(e))
+        else:
+            st.cache_data.clear()
+            st.rerun()

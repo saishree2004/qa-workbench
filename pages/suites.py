@@ -5,9 +5,10 @@ import streamlit as st
 
 from db import LIMIT, get_conn, guarded
 from prompts import PRIORITIES, TEST_TYPES
-from styles import badge, inject_css
+from styles import badge, inject_css, require_login
 
 inject_css()
+require_login()
 ss = st.session_state
 ss.setdefault("run", None)  # {"id", "suite", "done"} for the active run
 st.title("Suites")

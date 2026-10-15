@@ -6,11 +6,12 @@ import streamlit as st
 from db import get_conn, guarded
 from export import bugs_to_docx
 from prompts import SEVERITIES
-from styles import badge, inject_css
+from styles import badge, inject_css, require_login
 
 STATUSES = ["Open", "Fixed", "Retest", "Closed"]
 
 inject_css()
+require_login()
 st.title("Bug Tracker")
 
 c1, c2, c3 = st.columns([1, 1, 2])

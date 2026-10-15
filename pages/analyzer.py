@@ -3,7 +3,9 @@ import json
 import streamlit as st
 
 from ai_client import call_json
-from db import LIMIT, get_conn, guarded, upload_error
+from db import get_conn, guarded, upload_error
+
+MAX_REQ = 10000  # analyzer only; generator keeps LIMIT (2000)
 from prompts import ANALYZE_KEYS, analyze_requirement
 from styles import badge, inject_css
 
@@ -25,7 +27,7 @@ with left, st.container(border=True):
     st.subheader("Requirement")
     t_manual, t_file = st.tabs(["Manual Description", "Requirements File"])
     with t_manual:
-        manual = st.text_area("Paste the requirement", key="an_text", height=260, max_chars=LIMIT)
+        manual = st.text_area("Paste the requirement", key="an_text", height=260, max_chars=MAX_REQ)
     with t_file:
         up = st.file_uploader("Upload .txt or .md (max 5 MB)", type=["txt", "md"], key="an_file")
         bad = upload_error(up, (".txt", ".md")) if up else None
@@ -35,9 +37,9 @@ with left, st.container(border=True):
         if file_text:
             st.caption(f"{len(file_text)} chars loaded from {up.name}")
     requirement = (file_text or manual).strip()
-    too_long = len(requirement) > LIMIT
+    too_long = len(requirement) > MAX_REQ
     if too_long:
-        st.error(f"Requirement is {len(requirement)} characters; the limit is {LIMIT}.")
+        st.error(f"Requirement is {len(requirement)} characters; the limit is {MAX_REQ}.")
     if st.button("🔍 Analyze", use_container_width=True, disabled=not requirement or too_long):
         with st.spinner("Analyzing..."):
             data = call_json("analyzer", analyze_requirement(requirement))

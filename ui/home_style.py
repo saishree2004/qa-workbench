@@ -13,14 +13,20 @@ CSS = """
 .home-hero h1 span { background: linear-gradient(90deg, #8B5CF6, #DB2777); -webkit-background-clip: text;
   background-clip: text; color: transparent; }
 .home-hero p { text-align: center; color: #4B5563; max-width: 640px; margin: 0 auto; font-size: 1.1rem; }
-.st-key-qw-hero [data-testid="stPageLink"] { margin-top: 1.5rem; display: flex; justify-content: center; }
+.st-key-qw-hero [data-testid="stPageLink"] { margin-top: 1.5rem; }
+/* overrides the width:100% hero rule above so the CTA stays button-sized */
+.st-key-qw-hero > div:has([data-testid="stPageLink"]), .st-key-qw-hero [data-testid="stPageLink"],
+.st-key-qw-hero [data-testid="stPageLink"] a { width: fit-content !important; margin-left: auto; margin-right: auto; }
 .st-key-qw-hero [data-testid="stPageLink"] a { background: linear-gradient(90deg, #8B5CF6, #DB2777);
   border-radius: 10px; padding: .5rem 1.25rem; }
 .st-key-qw-hero [data-testid="stPageLink"] a, .st-key-qw-hero [data-testid="stPageLink"] a * { color: #fff; }
 .st-key-qw-hero [data-testid="stPageLink"] a:focus-visible { outline: 2px solid #7C3AED; outline-offset: 2px; }
 .st-key-qw-nav { background: #fff; border: 1px solid #E5E7EB; border-bottom-width: 2px; border-radius: 12px;
-  padding: .5rem .75rem; margin-bottom: 1rem; }
-.st-key-qw-nav .brand { height: 32px; width: auto; display: block; }
+  min-height: 64px; padding: 0 .75rem; margin-bottom: 1rem; display: flex; flex-direction: row;
+  align-items: center; }
+.st-key-qw-nav [data-testid="stMarkdownContainer"], .st-key-qw-nav [data-testid="stMarkdownContainer"] p {
+  display: flex; align-items: center; margin: 0; }
+.st-key-qw-nav .brand { height: 40px; width: auto; display: block; }
 .home-flow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center;
   margin: 1.25rem 0; }
 .home-flow .step { background: #fff; border: 1px solid #E5E7EB; border-radius: 999px; padding: .35rem .9rem;

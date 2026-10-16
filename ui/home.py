@@ -1,4 +1,6 @@
+import base64
 import html
+from pathlib import Path
 
 import streamlit as st
 
@@ -21,6 +23,7 @@ GROUPS = [
         ("pages/dashboard.py", "📊", "Dashboard"),
     ]),
 ]
+LOGO = base64.b64encode((Path(__file__).parent.parent / "assets/logo.svg").read_bytes()).decode()
 STEPS = ["Analyze", "Generate", "Organize", "Log bugs", "Report"]
 SEVERITY = {"low": "low", "medium": "medium", "high": "high", "critical": "high"}
 STATUS = {"Open": "high", "Retest": "medium", "Fixed": "low", "Closed": "type"}
@@ -54,17 +57,26 @@ def _stat(col, label, value):
                  f'<div class="value">{html.escape(str(value))}</div></div>', unsafe_allow_html=True)
 
 
-def _row(text, pills):
-    return f'<div class="home-row"><span>{html.escape(str(text))}</span><span>{pills}</span></div>'
+def _row(text, pills, kind):
+    return (f'<div class="home-row"><span class="title">{html.escape(str(text))}</span>'
+            f'<span class="pills pills-{kind}">{pills}</span></div>')
+
+
+def _nav():
+    with st.container(key="qw-nav"):
+        st.markdown(f'<img class="brand" src="data:image/svg+xml;base64,{LOGO}" alt="QA Workbench">',
+                    unsafe_allow_html=True)
 
 
 def home():
     inject_home_css()
-    st.markdown('<div class="home-hero"><h1>Test smarter. <span>Ship with confidence.</span></h1>'
-                '<p>From requirements to test cases to bugs, QA Workbench keeps your whole '
-                'testing workflow in one place.</p></div>', unsafe_allow_html=True)
-    with st.container(key="home_cta"):
-        st.page_link("pages/analyzer.py", label="Start with a requirement", icon=":material/arrow_forward:")
+    _nav()
+    with st.container(key="qw-hero"):
+        st.markdown('<div class="home-hero"><h1>Test smarter. <span>Ship with confidence.</span></h1>'
+                    '<p>From requirements to test cases to bugs, QA Workbench keeps your whole '
+                    'testing workflow in one place.</p></div>', unsafe_allow_html=True)
+        st.page_link("pages/analyzer.py", label="Start with a requirement", icon=":material/arrow_forward:",
+                     width="content")
 
     steps = '<span class="arrow">→</span>'.join(
         f'<span class="step"><b>{i}</b>{s}</span>' for i, s in enumerate(STEPS, 1))
@@ -91,11 +103,11 @@ def home():
     with left, st.container(border=True):
         st.markdown("**Latest bugs**")
         st.markdown("".join(_row(b["title"], badge(b["severity"], SEVERITY.get(str(b["severity"]).lower(), "type"))
-                                 + badge(b["status"], STATUS.get(b["status"], "type"))) for b in bugs)
+                                 + badge(b["status"], STATUS.get(b["status"], "type")), "bug") for b in bugs)
                     or "No bugs logged yet.", unsafe_allow_html=True)
     with right, st.container(border=True):
         st.markdown("**Latest runs**")
-        st.markdown("".join(_row(f"{r['suite']} · {r['started_at'][:10]}", badge(_rate(r), "type")) for r in runs)
+        st.markdown("".join(_row(f"{r['suite']} · {r['started_at'][:10]}", badge(_rate(r), "type"), "run") for r in runs)
                     or "No runs yet.", unsafe_allow_html=True)
 
     st.markdown('<div class="home-footer">QA Workbench · Analyze, generate, organize, log bugs, report.</div>',

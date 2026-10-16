@@ -21,12 +21,6 @@ CSS = """
   border-radius: 10px; padding: .5rem 1.25rem; }
 .st-key-qw-hero [data-testid="stPageLink"] a, .st-key-qw-hero [data-testid="stPageLink"] a * { color: #fff; }
 .st-key-qw-hero [data-testid="stPageLink"] a:focus-visible { outline: 2px solid #7C3AED; outline-offset: 2px; }
-.st-key-qw-nav { background: #fff; border: 1px solid #E5E7EB; border-bottom-width: 2px; border-radius: 12px;
-  min-height: 64px; padding: 0 .75rem; margin-bottom: 1rem; display: flex; flex-direction: row;
-  align-items: center; }
-.st-key-qw-nav [data-testid="stMarkdownContainer"], .st-key-qw-nav [data-testid="stMarkdownContainer"] p {
-  display: flex; align-items: center; margin: 0; }
-.st-key-qw-nav .brand { height: 40px; width: auto; display: block; }
 .home-flow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center;
   margin: 1.25rem 0; }
 .home-flow .step { background: #fff; border: 1px solid #E5E7EB; border-radius: 999px; padding: .35rem .9rem;

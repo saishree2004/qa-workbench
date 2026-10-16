@@ -1,6 +1,4 @@
-import base64
 import html
-from pathlib import Path
 
 import streamlit as st
 
@@ -23,7 +21,6 @@ GROUPS = [
         ("pages/dashboard.py", "📊", "Dashboard"),
     ]),
 ]
-LOGO = base64.b64encode((Path(__file__).parent.parent / "assets/logo.svg").read_bytes()).decode()
 STEPS = ["Analyze", "Generate", "Organize", "Log bugs", "Report"]
 SEVERITY = {"low": "low", "medium": "medium", "high": "high", "critical": "high"}
 STATUS = {"Open": "high", "Retest": "medium", "Fixed": "low", "Closed": "type"}
@@ -62,15 +59,8 @@ def _row(text, pills, kind):
             f'<span class="pills pills-{kind}">{pills}</span></div>')
 
 
-def _nav():
-    with st.container(key="qw-nav"):
-        st.markdown(f'<img class="brand" src="data:image/svg+xml;base64,{LOGO}" alt="QA Workbench">',
-                    unsafe_allow_html=True)
-
-
 def home():
     inject_home_css()
-    _nav()
     with st.container(key="qw-hero"):
         st.markdown('<div class="home-hero"><h1>Test smarter. <span>Ship with confidence.</span></h1>'
                     '<p>From requirements to test cases to bugs, QA Workbench keeps your whole '

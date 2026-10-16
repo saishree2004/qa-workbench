@@ -1,6 +1,4 @@
-import base64
 import html
-from pathlib import Path
 
 import streamlit as st
 
@@ -23,8 +21,8 @@ GROUPS = [
         ("pages/dashboard.py", "📊", "Dashboard"),
     ]),
 ]
-LOGO = base64.b64encode((Path(__file__).parent.parent / "assets/logo.svg").read_bytes()).decode()
-STEPS = ["Analyze", "Generate", "Organize", "Log bugs", "Report"]
+STEPS = [("pages/analyzer.py", "Analyzer"), ("pages/generator.py", "Generator"), ("pages/suites.py", "Suites"),
+         ("pages/bug_builder.py", "Bug Builder"), ("pages/daily_update.py", "Daily Update")]
 SEVERITY = {"low": "low", "medium": "medium", "high": "high", "critical": "high"}
 STATUS = {"Open": "high", "Retest": "medium", "Fixed": "low", "Closed": "type"}
 
@@ -45,7 +43,9 @@ def _load():
             "SELECT r.suite, r.started_at, COUNT(rr.id) AS total, SUM(rr.result='Pass') AS passed "
             "FROM runs r LEFT JOIN run_results rr ON rr.run_id = r.id "
             "GROUP BY r.id ORDER BY r.started_at DESC, r.id DESC LIMIT 5").fetchall()
-    return cases, open_bugs, last, bugs, runs
+        runs_today = c.execute("SELECT COUNT(*) FROM runs WHERE date(started_at) = date('now')").fetchone()[0]
+        bugs_today = c.execute("SELECT COUNT(*) FROM bugs WHERE date(created_at) = date('now')").fetchone()[0]
+    return cases, open_bugs, last, bugs, runs, runs_today, bugs_today
 
 
 def _rate(row):
@@ -62,27 +62,22 @@ def _row(text, pills, kind):
             f'<span class="pills pills-{kind}">{pills}</span></div>')
 
 
-def _nav():
-    with st.container(key="qw-nav"):
-        st.markdown(f'<img class="brand" src="data:image/svg+xml;base64,{LOGO}" alt="QA Workbench">',
-                    unsafe_allow_html=True)
-
-
 def home():
     inject_home_css()
-    _nav()
+    cases, open_bugs, last, bugs, runs, runs_today, bugs_today = _load()
     with st.container(key="qw-hero"):
         st.markdown('<div class="home-hero"><h1>Test smarter. <span>Ship with confidence.</span></h1>'
-                    '<p>From requirements to test cases to bugs, QA Workbench keeps your whole '
-                    'testing workflow in one place.</p></div>', unsafe_allow_html=True)
-        st.page_link("pages/analyzer.py", label="Start with a requirement", icon=":material/arrow_forward:",
-                     width="content")
+                    '<p>From requirements to bug reports, in one place.</p></div>', unsafe_allow_html=True)
+        with st.container(key="qw-cta"):
+            st.page_link("pages/analyzer.py", label="Start with a requirement", icon=":material/arrow_forward:",
+                         width="content")
+        today = (f"Today: {runs_today} runs · {bugs_today} bugs raised · {open_bugs} open bugs"
+                 if runs_today or bugs_today or open_bugs else "No activity yet today")
+        st.markdown(f'<p class="home-today">{today}</p>', unsafe_allow_html=True)
+        with st.container(key="qw-flow", horizontal=True, horizontal_alignment="center", gap="small"):
+            for i, (path, label) in enumerate(STEPS, 1):
+                st.page_link(path, label=f"{i}. {label}", width="content")
 
-    steps = '<span class="arrow">→</span>'.join(
-        f'<span class="step"><b>{i}</b>{s}</span>' for i, s in enumerate(STEPS, 1))
-    st.markdown(f'<div class="home-flow">{steps}</div>', unsafe_allow_html=True)
-
-    cases, open_bugs, last, bugs, runs = _load()
     st.markdown("### Overview")
     c1, c2, c3, c4 = st.columns(4)
     _stat(c1, "Test cases", cases or "–")

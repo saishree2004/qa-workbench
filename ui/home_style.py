@@ -3,7 +3,7 @@ import streamlit as st
 CSS = """
 <style>
 .st-key-qw-hero { background: #F3EEFF; border: 1px solid #E9DDFE; border-radius: 16px;
-  padding: 2.5rem 1.5rem; align-items: center; text-align: center; }
+  padding: 1.25rem 1.5rem; align-items: center; text-align: center; }
 .st-key-qw-hero > div, .st-key-qw-hero [data-testid="stMarkdownContainer"],
 .home-hero, .home-hero h1 { width: 100%; text-align: center; margin-left: 0; margin-right: 0;
   padding-left: 0; padding-right: 0; }
@@ -13,27 +13,20 @@ CSS = """
 .home-hero h1 span { background: linear-gradient(90deg, #8B5CF6, #DB2777); -webkit-background-clip: text;
   background-clip: text; color: transparent; }
 .home-hero p { text-align: center; color: #4B5563; max-width: 640px; margin: 0 auto; font-size: 1.1rem; }
-.st-key-qw-hero [data-testid="stPageLink"] { margin-top: 1.5rem; }
+.st-key-qw-cta [data-testid="stPageLink"] { margin-top: 1rem; }
 /* overrides the width:100% hero rule above so the CTA stays button-sized */
-.st-key-qw-hero > div:has([data-testid="stPageLink"]), .st-key-qw-hero [data-testid="stPageLink"],
-.st-key-qw-hero [data-testid="stPageLink"] a { width: fit-content !important; margin-left: auto; margin-right: auto; }
-.st-key-qw-hero [data-testid="stPageLink"] a { background: linear-gradient(90deg, #8B5CF6, #DB2777);
+.st-key-qw-hero > div:has([data-testid="stPageLink"]), .st-key-qw-cta [data-testid="stPageLink"],
+.st-key-qw-cta [data-testid="stPageLink"] a { width: fit-content !important; margin-left: auto; margin-right: auto; }
+.st-key-qw-cta [data-testid="stPageLink"] a { background: linear-gradient(90deg, #8B5CF6, #DB2777);
   border-radius: 10px; padding: .5rem 1.25rem; }
-.st-key-qw-hero [data-testid="stPageLink"] a, .st-key-qw-hero [data-testid="stPageLink"] a * { color: #fff; }
-.st-key-qw-hero [data-testid="stPageLink"] a:focus-visible { outline: 2px solid #7C3AED; outline-offset: 2px; }
-.st-key-qw-nav { background: #fff; border: 1px solid #E5E7EB; border-bottom-width: 2px; border-radius: 12px;
-  min-height: 64px; padding: 0 .75rem; margin-bottom: 1rem; display: flex; flex-direction: row;
-  align-items: center; }
-.st-key-qw-nav [data-testid="stMarkdownContainer"], .st-key-qw-nav [data-testid="stMarkdownContainer"] p {
-  display: flex; align-items: center; margin: 0; }
-.st-key-qw-nav .brand { height: 40px; width: auto; display: block; }
-.home-flow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center;
-  margin: 1.25rem 0; }
-.home-flow .step { background: #fff; border: 1px solid #E5E7EB; border-radius: 999px; padding: .35rem .9rem;
-  font-weight: 600; color: #374151; }
-.home-flow .step b { display: inline-block; width: 1.4rem; height: 1.4rem; line-height: 1.4rem; border-radius: 50%;
-  background: #7C3AED; color: #fff; text-align: center; margin-right: .4rem; font-size: .8rem; }
-.home-flow .arrow { color: #9CA3AF; }
+.st-key-qw-cta [data-testid="stPageLink"] a, .st-key-qw-cta [data-testid="stPageLink"] a * { color: #fff; }
+.st-key-qw-cta [data-testid="stPageLink"] a:focus-visible { outline: 2px solid #7C3AED; outline-offset: 2px; }
+.home-today { color: #6B7280; font-size: .85rem; margin: .25rem 0 0; }
+.st-key-qw-flow [data-testid="stPageLink"] a { background: #fff; border: 1px solid #E5E7EB; border-radius: 999px;
+  padding: .2rem .8rem; }
+.st-key-qw-flow [data-testid="stPageLink"] a * { color: #374151; font-weight: 600; }
+.st-key-qw-flow [data-testid="stPageLink"] a:hover { border-color: #7C3AED; }
+.st-key-qw-flow [data-testid="stPageLink"] a:focus-visible { outline: 2px solid #7C3AED; outline-offset: 2px; }
 .home-stat { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1rem 1.25rem;
   box-shadow: 0 1px 3px rgba(16,24,40,.06); }
 .home-stat .label { color: #6B7280; font-size: .85rem; }
